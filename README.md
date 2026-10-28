@@ -49,3 +49,16 @@ kubectl get envoyextensionpolicy -n juice-shop
 
 1. First, run source `/etc/bash.bashrc` then source `~/.bashrc`.
 2. Even if we did that on the script it will not reflect.
+
+## License
+
+This repository contains software and educational documentation released under different licenses.
+
+- **Code and scripts:** MIT License
+    
+- **Documentation and educational notes:** [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)
+    
+
+Unless otherwise stated, original software code and scripts are released under the MIT License, while original documentation and educational notes are released under CC BY 4.0.
+
+Third-party content remains subject to its respective license. These licenses apply only to material I have the right to license.
