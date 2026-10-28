@@ -29,6 +29,15 @@
 
 > The script also doesn't deploy the OWASP Juice Shop. I have to apply it manually.
 
+1. I had used this script for one control-plane and one worker-node setup. Might have to modify the scripts little bit if you are planing to go with some other architecture type.
+2. **Step 1:** run the [prepare.sh](./scripts/prepare.sh) on both nodes.
+3. **Step 2:** run the [init-cp.sh](./scripts/init-cp.sh) on the control plane.
+	- After the script has finished running, copy the contents of `worker-join-command.txt` form the data-plane.
+	- Then create a new file called `worker-join-command.txt` in the worker node and paste the contents here.
+4. **Step 3:** run the [connect-wn.sh](./scripts/connect-wn.sh).
+5. **Step 4:** run the [addons.sh](./scripts/addons.sh)
+6. **Step 5:** When you are ready deploy the vulnerable app by running the commands shown [below](#deploy-owasp-juice-shop).
+
 #### Deploy Owasp Juice Shop
 
 ```bash
