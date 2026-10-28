@@ -1,0 +1,39 @@
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
+metadata:
+  name: my-proxy
+  namespace: envoy-gateway-system
+spec:
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyDeployment:
+        pod:
+          annotations:
+            splunk.com/include: "true"
+            splunk.com/index: "firewall"
+            splunk.com/sourcetype: "envoy:waf"
+          volumes:
+            - name: dynamic-modules
+              image:
+                reference: ghcr.io/tetratelabs/built-on-envoy/composer:0.6.0-dev   # verify tag first
+                pullPolicy: IfNotPresent
+        container:
+          env:
+            - name: GODEBUG
+              value: "cgocheck=0"
+          volumeMounts:
+            - name: dynamic-modules
+              mountPath: /etc/envoy/dynamic-modules
+              readOnly: true
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits:   { memory: 768Mi }
+  dynamicModules:
+    - name: composer
+      source:
+        type: Local
+        local:
+          path: /etc/envoy/dynamic-modules/libcomposer.so
+      doNotClose: true
+      loadGlobally: false

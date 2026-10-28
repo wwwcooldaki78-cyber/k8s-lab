@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: juice-shop
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: juice-shop
+  namespace: juice-shop
+spec:
+  replicas: 2
+  selector:
+    matchLabels: { app: juice-shop }
+  template:
+    metadata:
+      labels: { app: juice-shop }
+      annotations:
+        splunk.com/include: "true"
+        splunk.com/index: "juiceshop"
+        splunk.com/sourcetype: "juiceshop:app"
+    spec:
+      automountServiceAccountToken: false
+      containers:
+        - name: juice-shop
+          image:  bkimminich/juice-shop
+          ports:
+            - containerPort: 3000
+          resources:
+            requests: { cpu: 100m, memory: 256Mi }
+            limits:   { cpu: 500m, memory: 512Mi }
+          startupProbe:
+            httpGet: { path: /rest/admin/application-version, port: 3000 }
+            failureThreshold: 30
+            periodSeconds: 2
+          readinessProbe:
+            httpGet: { path: /rest/admin/application-version, port: 3000 }
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /rest/admin/application-version, port: 3000 }
+            periodSeconds: 10
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: BackendTrafficPolicy
+metadata:
+  name: juice-sticky
+  namespace: juice-shop
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: juice-shop
+  loadBalancer:
+    type: ConsistentHash
+    consistentHash:
+      type: Cookie
+      cookie:
+        name: juice-affinity
+        ttl: 3600s
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: juice-shop
+  namespace: juice-shop
+spec:
+  type: ClusterIP
+  selector:
+    app: juice-shop
+  ports:
+    - name: http
+      port: 80
+      targetPort: 3000 
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: juice-shop
+  namespace: juice-shop
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: juice-shop
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target: { type: Utilization, averageUtilization: 70 }
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 120
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: juice-shop-restrict
+  namespace: juice-shop
+spec:
+  podSelector: {}
+  policyTypes: [Ingress, Egress]
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels: { kubernetes.io/metadata.name: envoy-gateway-system }
+          podSelector:
+            matchLabels: { gateway.envoyproxy.io/owning-gateway-name: juice-gateway }
+      ports:
+        - protocol: TCP
+          port: 3000
+  egress: []
