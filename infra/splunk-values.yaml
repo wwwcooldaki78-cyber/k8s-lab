@@ -1,0 +1,18 @@
+clusterName: kubernetes
+
+splunkPlatform:
+  endpoint: https://10.209.57.84:8088/services/collector
+  token:  lab-hec-token-1234
+  index: firewall          # fallback if a pod has no index annotation
+  logsEnabled: true
+  metricsEnabled: false
+  tracesEnabled: false
+  insecureSkipVerify: true  # lab only: Splunk uses a self-signed cert
+
+logsCollection:
+  containers:
+    enabled: true
+    useSplunkIncludeAnnotation: true   # only collect pods with the sticky note
+
+clusterReceiver:
+  enabled: false   # we're not collecting cluster metrics

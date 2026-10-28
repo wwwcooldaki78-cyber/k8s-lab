@@ -1,0 +1,54 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: eg
+spec:
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
+  parametersRef:
+    group: gateway.envoyproxy.io
+    kind: EnvoyProxy
+    name: my-proxy
+    namespace: envoy-gateway-system
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: juice-gateway
+  namespace: juice-shop
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-staging   # switch to letsencrypt-prod once staging works
+spec:
+  gatewayClassName: eg
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      hostname: juice.lab.dakky.xyz
+      allowedRoutes:
+        namespaces:
+          from: Same
+    - name: https
+      protocol: HTTPS
+      port: 443
+      hostname: juice.lab.dakky.xyz
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - kind: Secret
+            name: juice-shop-tls
+      allowedRoutes:
+        namespaces:
+          from: Same
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: ClientTrafficPolicy
+metadata:
+  name: juice-tls
+  namespace: juice-shop
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: juice-gateway
+  tls:
+    minVersion: "1.2"
