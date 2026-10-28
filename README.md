@@ -3,21 +3,21 @@
 1. Disable Swap
 2. Load Essential Kernel Modules
 3. Configure critical sysctl parameters
-4. Install container runtime, [[Conatainerd]] is what is chose
+4. Install container runtime, [Containerd](./Setup/Containerd.md) is what is chose
 5. Setting Up the Kubernetes Repositories
-6. Install kubelet [[Installing kubeadm|kubeadm]] kubectl
+6. Install kubelet [kubeadm](./Setup/Installing%20kubeadm) kubectl
 7. Initialize the Cluster
-8. Install [[Calico]] CNI
+8. Install [Calico](./Setup/Calico) CNI
 9. Join the Worker Node
-10. Install [[Helm]]
-11. Install [[Metrics-server]]
-12. Install [[MetalLB]]
-13. Install [[Envoy Gateway]] + apply the Corza proxy settings.
-14. Install [[Cert-Manager]]
-15. Setup [[Splunk]] otel
+10. Install [Helm](./Setup/Helm)
+11. Install [Metrics-server](./Setup/Metrics-server)
+12. Install [MetalLB](./Setup/MetalLB)
+13. Install [Envoy Gateway](./Setup/Envoy%20Gateway) + apply the Corza proxy settings.
+14. Install [Cert-Manager](./Setup/Cert-Manager)
+15. Setup [Splunk](./Setup/Splunk) otel
 16. Verify Cluster Health
 17. Test Pod Scheduling
-18. Deploy the vulnerable web app ([[Juice-shop]])
+18. Deploy the vulnerable web app ([Juice-shop](./Setup/Juice-shop))
 
 ### Install using scripts
 
