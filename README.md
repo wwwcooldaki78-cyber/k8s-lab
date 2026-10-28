@@ -3,7 +3,7 @@
 1. Disable Swap
 2. Load Essential Kernel Modules
 3. Configure critical sysctl parameters
-4. Install container runtime, [Containerd](./Setup/Containerd.md) is what is chose
+4. Install container runtime, [Containerd](./Setup/Containerd) is what is chose
 5. Setting Up the Kubernetes Repositories
 6. Install kubelet [kubeadm](./Setup/Installing%20kubeadm) kubectl
 7. Initialize the Cluster
