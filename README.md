@@ -47,8 +47,8 @@
 
 ```bash
 
-kubectl apply -f juice-shop.yaml
-
+kubectl apply -f ./app/juice-shop.yaml
+`~/.bashrc`
 kubectl apply -f ./infra/gateway.yaml -f ./infra/httproute.yaml
 
 watch -n 1 kubectl get gateway -A
@@ -76,7 +76,7 @@ kubectl get envoyextensionpolicy -n juice-shop
 	echo 'net.ipv4.ip_unprivileged_port_start=80' | sudo tee -a /etc/sysctl.conf
 	sudo sysctl -p
 	
-	docker run -d --name nlb-sim -p 80:80 -p 443:443 \ -v ./infra/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro \ haproxy:2.9
+	docker run -d --name nlb-sim -p 80:80 -p 443:443 -v ./infra/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro haproxy:2.9
 	```
 
 ## License
