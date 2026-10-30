@@ -6,7 +6,7 @@ set -Eeuo pipefail
 # 01. EDIT THESE VALUES
 # ==============================================================================
 readonly CP_DOMAIN="control-plane.lab.dakky.xyz"    # DNS name for the API server, e.g. k8s.lab.yourdomain.com
-readonly CP_IP="10.20.92.122"                       # this node's static IP (must belong to THIS machine)
+readonly WORKER_IP="$(hostname -I | awk '{print $1}')"                      # this node's static IP (must belong to THIS machine)
 readonly POD_CIDR="10.244.0.0/16"                   # must not overlap your node network or MetalLB range
 readonly SERVICE_CIDR="10.96.0.0/12"
 readonly CALICO_VERSION="v3.33.0"

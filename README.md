@@ -29,6 +29,11 @@
 
 > The script also doesn't deploy the OWASP Juice Shop. I have to apply it manually.
 
+- Make sure that the `CP_DOMAIN` on `init-cp.sh` resolve to the IP of the control plane.
+- Make sure that the `WORKER_IP` in `connect-wn.sh` script point to the worker node's IP.
+- Also make sure that the domain that was on the `CP_DOMAIN` variable when the script ran, must resolve to the control plane node's IP.
+
+
 1. I had used this script for one control-plane and one worker-node setup. Might have to modify the scripts little bit if you are planing to go with some other architecture type.
 2. **Step 1:** run the [prepare.sh](./scripts/prepare.sh) on both nodes.
 3. **Step 2:** run the [init-cp.sh](./scripts/init-cp.sh) on the control plane.

@@ -11,7 +11,8 @@ set -Eeuo pipefail
 # ==============================================================================
 # 01. EDIT THIS VALUE
 # ==============================================================================
-readonly WORKER_IP="10.20.92.166"               # this worker's static IP (must belong to THIS machine)
+readonly WORKER_IP="$(hostname -I | awk '{print $1}')"              # this worker's static IP (must belong to THIS machine)
+readonly WORKER_HOSTNAME="$(hostname -s)"
 
 readonly SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 readonly WORKDIR="$(dirname "$SCRIPT_DIR")"
@@ -123,7 +124,7 @@ discovery:
     caCertHashes:
       - "${HASH}"
 nodeRegistration:
-  name: worker-01.lab.dakky.xyz
+  name: "${WORKER_HOSTNAME}"
   criSocket: unix:///run/containerd/containerd.sock
   kubeletExtraArgs:
     - name: node-ip
