@@ -17,7 +17,7 @@ readonly METALLB_CONFIG="$WORKDIR/infra/metallb-config.yaml"
 readonly METALLB_CHART_VERSION=""
 
 readonly ENVOY_GATEWAY_VERSION=""
-readonly WAF_FILE="$WORKDIR/app/waf.yaml"  
+WAF_FILE="$WORKDIR/app/waf.yaml"  
 
 readonly CERT_MANAGER_VERSION="v1.21.3"
 readonly ACME_EMAIL="www.cooldaki78@gmail.com"
@@ -41,11 +41,14 @@ for arg in "$@"; do
     esac
 done
 
+if [[ "$SKIP_METALLB" -eq 1 ]]; then
+    readonly WAF_FILE="$WORKDIR/app/cloud-waf.yaml"
+fi
+
 die() { echo "ERROR: $*" >&2; exit 1; }
-# a problem stops a real run, but only warns in a dry run
+
 problem() { if [[ $DRY_RUN -eq 1 ]]; then echo "  WARNING (dry-run): $*" >&2; else die "$*"; fi; }
 
-# run CMD...      -> execute it, or only print it in dry-run mode
 run() {
     if [[ $DRY_RUN -eq 1 ]]; then echo "  [dry-run] $*"; else "$@"; fi
 }

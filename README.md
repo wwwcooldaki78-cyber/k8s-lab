@@ -44,11 +44,11 @@
 
 kubectl apply -f juice-shop.yaml
 
-kubectl apply -f gateway.yaml -f httproute.yaml
+kubectl apply -f ./infra/gateway.yaml -f ./infra/httproute.yaml
 
 watch -n 1 kubectl get gateway -A
 
-kubectl apply -f waf-policy.yaml
+kubectl apply -f ./app/waf-policy.yaml
 
 kubectl get envoyextensionpolicy -n juice-shop
 
