@@ -28,12 +28,18 @@ readonly ISSUERS_FILE="$WORKDIR/infra/clusterissuers.yaml"
 # 02. Helpers: --dry-run support
 # ==============================================================================
 DRY_RUN=0
-case "${1:-}" in
-    "") ;;
-    --dry-run) DRY_RUN=1 ;;
-    *) echo "Usage: $0 [--dry-run]" >&2; exit 2 ;;
-esac
-[[ $# -le 1 ]] || { echo "Usage: $0 [--dry-run]" >&2; exit 2; }
+SKIP_METALLB="${SKIP_METALLB:-0}"
+
+usage() { echo "Usage: $0 [--dry-run] [--cloud]" >&2; exit 2; }
+
+for arg in "$@"; do
+    case "$arg" in
+        --dry-run)       DRY_RUN=1 ;;
+        --cloud)  SKIP_METALLB=1 ;;
+        -h|--help)       usage ;;
+        *)               echo "Unknown argument: $arg" >&2; usage ;;
+    esac
+done
 
 die() { echo "ERROR: $*" >&2; exit 1; }
 # a problem stops a real run, but only warns in a dry run
@@ -189,34 +195,37 @@ run helm upgrade --install metrics-server metrics-server/metrics-server \
 # ==============================================================================
 # 06. MetalLB (via Helm), then the pool + L2 advertisement from your own file
 # ==============================================================================
-echo "==> 3. MetalLB"
-
-if [[ -r "$METALLB_CONFIG" ]]; then
-    echo "  addresses in your config : $(grep -oE '[0-9]+(\.[0-9]+){3}(/[0-9]+|-[0-9]+(\.[0-9]+){3})?' "$METALLB_CONFIG" | sort -u | tr '\n' ' ')"
-fi
-echo "  node IPs                 : $(kubectl get nodes -o jsonpath='{.items[*].status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null)"
-
-run_retry helm repo add metallb https://metallb.github.io/metallb --force-update
-run_retry helm repo update metallb
-
-metallb_version_args=()
-[[ -n "$METALLB_CHART_VERSION" ]] && metallb_version_args=(--version "$METALLB_CHART_VERSION")
-
-run helm upgrade --install metallb metallb/metallb \
-    --namespace metallb-system --create-namespace \
-    "${metallb_version_args[@]}" \
-    --wait --timeout 5m
-
-if [[ $DRY_RUN -eq 1 ]]; then
-    echo "  [dry-run] kubectl apply -f $METALLB_CONFIG   (retried for up to 2 minutes until MetalLB's webhook is ready). File contents:"
-    [[ -r "$METALLB_CONFIG" ]] && sed 's/^/      | /' "$METALLB_CONFIG"
+if [[ "$SKIP_METALLB" -eq 1 ]]; then
+    : # does nothing
 else
-    if ! wait_until 1000 "MetalLB webhook to accept $METALLB_CONFIG" kubectl apply -f "$METALLB_CONFIG"; then
-        kubectl apply -f "$METALLB_CONFIG"    
-    fi
-    echo "  applied $METALLB_CONFIG"
-fi
+    echo "==> 3. MetalLB"
 
+    if [[ -r "$METALLB_CONFIG" ]]; then
+        echo "  addresses in your config : $(grep -oE '[0-9]+(\.[0-9]+){3}(/[0-9]+|-[0-9]+(\.[0-9]+){3})?' "$METALLB_CONFIG" | sort -u | tr '\n' ' ')"
+    fi
+    echo "  node IPs                 : $(kubectl get nodes -o jsonpath='{.items[*].status.addresses[?(@.type=="InternalIP")].address}' 2>/dev/null)"
+
+    run_retry helm repo add metallb https://metallb.github.io/metallb --force-update
+    run_retry helm repo update metallb
+
+    metallb_version_args=()
+    [[ -n "$METALLB_CHART_VERSION" ]] && metallb_version_args=(--version "$METALLB_CHART_VERSION")
+
+    run helm upgrade --install metallb metallb/metallb \
+        --namespace metallb-system --create-namespace \
+        "${metallb_version_args[@]}" \
+        --wait --timeout 5m
+
+    if [[ $DRY_RUN -eq 1 ]]; then
+        echo "  [dry-run] kubectl apply -f $METALLB_CONFIG   (retried for up to 2 minutes until MetalLB's webhook is ready). File contents:"
+        [[ -r "$METALLB_CONFIG" ]] && sed 's/^/      | /' "$METALLB_CONFIG"
+    else
+        if ! wait_until 1000 "MetalLB webhook to accept $METALLB_CONFIG" kubectl apply -f "$METALLB_CONFIG"; then
+            kubectl apply -f "$METALLB_CONFIG"    
+        fi
+        echo "  applied $METALLB_CONFIG"
+    fi
+fi
 # ==============================================================================
 # 07. Envoy Gateway (via Helm) + the Coraza proxy settings
 # ==============================================================================
@@ -344,14 +353,18 @@ else
     fail=1
 fi
 
-kubectl -n metallb-system rollout status deploy/metallb-controller --timeout=120s >/dev/null \
-    && echo "OK: metallb-controller is rolled out" || { echo "FAIL: metallb-controller not ready"; fail=1; }
-kubectl -n metallb-system rollout status ds/metallb-speaker --timeout=120s >/dev/null \
-    && echo "OK: metallb-speaker is rolled out (one pod per node)" || { echo "FAIL: metallb-speaker not ready"; fail=1; }
-for kind in ipaddresspools l2advertisements; do
-    n=$(kubectl -n metallb-system get "$kind.metallb.io" --no-headers 2>/dev/null | wc -l)
-    [[ "$n" -ge 1 ]] && echo "OK: $n $kind found" || { echo "FAIL: no $kind in metallb-system"; fail=1; }
-done
+if [[ "$SKIP_METALLB" -eq 1 ]]; then
+    : #Does nothing
+else
+    kubectl -n metallb-system rollout status deploy/metallb-controller --timeout=120s >/dev/null \
+        && echo "OK: metallb-controller is rolled out" || { echo "FAIL: metallb-controller not ready"; fail=1; }
+    kubectl -n metallb-system rollout status ds/metallb-speaker --timeout=120s >/dev/null \
+        && echo "OK: metallb-speaker is rolled out (one pod per node)" || { echo "FAIL: metallb-speaker not ready"; fail=1; }
+    for kind in ipaddresspools l2advertisements; do
+        n=$(kubectl -n metallb-system get "$kind.metallb.io" --no-headers 2>/dev/null | wc -l)
+        [[ "$n" -ge 1 ]] && echo "OK: $n $kind found" || { echo "FAIL: no $kind in metallb-system"; fail=1; }
+    done
+fi
 
 kubectl -n envoy-gateway-system rollout status deploy/envoy-gateway --timeout=120s >/dev/null \
     && echo "OK: envoy-gateway controller is rolled out" || { echo "FAIL: envoy-gateway not ready"; fail=1; }
