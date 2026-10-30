@@ -59,6 +59,21 @@ kubectl get envoyextensionpolicy -n juice-shop
 1. First, run source `/etc/bash.bashrc` then source `~/.bashrc`.
 2. Even if we did that on the script it will not reflect.
 
+#### Install on BareMetal
+
+> Read the scripts and understand the architecture design I have decided to go with. It will be helpful.
+
+- If you are planing to run this script in VM, we have two choices. 
+	1. We can run the script as same as like we need to do in the cloud. Then we'll have to add a **loadbalancer**. I used a docker container of `HAproxy`.
+	2. Otherwise we can make create a `type: Loadbalancer` service and use metalLB to act as `L2` and redirect traffic to this service.
+- I created the docker container using the following command.
+	```bash
+	echo 'net.ipv4.ip_unprivileged_port_start=80' | sudo tee -a /etc/sysctl.conf
+	sudo sysctl -p
+	
+	docker run -d --name nlb-sim -p 80:80 -p 443:443 \ -v ./infra/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro \ haproxy:2.9
+	```
+
 ## License
 
 This repository contains software and educational documentation released under different licenses.
