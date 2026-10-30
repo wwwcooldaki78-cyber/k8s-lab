@@ -48,7 +48,7 @@
 ```bash
 
 kubectl apply -f ./app/juice-shop.yaml
-`~/.bashrc`
+
 kubectl apply -f ./infra/gateway.yaml -f ./infra/httproute.yaml
 
 watch -n 1 kubectl get gateway -A
